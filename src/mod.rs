@@ -282,3 +282,84 @@ fn walk(
   }
   v.unwrap()
 }
+
+fn exports(
+  self: &Self,
+  package_json_info: &PackageJsonInfo,
+  source: &str,
+  config: &ConditionOptions,
+) -> Option<Vec<String>> {
+  if let Some(exports_field) =
+    self.get_field_value_from_package_json_info(package_json_info, "exports")
+  {
+    // TODO If the current package does not have a name, then look up for the name of the folder
+    let name = match self.get_field_value_from_package_json_info(package_json_info, "name") {
+      Some(n) => n,
+      None => {
+        eprintln!(
+          "Missing \"name\" field in package.json {:?}",
+          package_json_info
+        );
+        return None;
+      }
+    };
+    let mut map: HashMap<String, Value> = HashMap::new();
+    match exports_field {
+      Value::String(string_value) => {
+        map.insert(".".to_string(), Value::String(string_value.clone()));
+      }
+      Value::Object(object_value) => {
+        for (k, v) in &object_value {
+          if !k.starts_with('.') {
+            map.insert(".".to_string(), Value::Object(object_value.clone()));
+            break;
+          } else {
+            map.insert(k.to_string(), v.clone());
+          }
+        }
+      }
+      _ => {}
+    }
+    if !map.is_empty() {
+      return Some(self.walk(name.as_str().unwrap(), &map, source, config));
+    }
+  }
+
+  None
+}
+
+fn imports(
+  &self,
+  package_json_info: &PackageJsonInfo,
+  source: &str,
+  config: &ConditionOptions,
+) -> Option<Vec<String>> {
+  if let Some(imports_field) =
+    self.get_field_value_from_package_json_info(package_json_info, "imports")
+  {
+    // TODO If the current package does not have a name, then look up for the name of the folder
+    let name = match self.get_field_value_from_package_json_info(package_json_info, "name") {
+      Some(n) => n,
+      None => {
+        eprintln!(
+          "Missing \"name\" field in package.json {:?}",
+          package_json_info
+        );
+        return None;
+      }
+    };
+    let mut imports_map: HashMap<String, Value> = HashMap::new();
+
+    match imports_field {
+      Value::Object(object_value) => {
+        imports_map.extend(object_value.clone());
+      }
+      _ => {
+        eprintln!("Unexpected imports field format");
+        return None;
+      }
+    }
+    return Some(self.walk(name.as_str().unwrap(), &imports_map, source, config));
+  }
+  None
+}

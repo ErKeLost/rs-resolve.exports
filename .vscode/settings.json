@@ -1,4 +1,4 @@
 {
-  "cSpell.words": ["aarch", "androideabi", "armv", "gnueabihf", "msvc"],
+  "cSpell.words": ["aarch", "androideabi", "armv", "bindgen", "gnueabihf", "msvc"],
   "editor.inlineSuggest.showToolbar": "onHover"
 }

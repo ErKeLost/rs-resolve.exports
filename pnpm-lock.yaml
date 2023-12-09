@@ -56,6 +56,9 @@ devDependencies:
   prettier:
     specifier: ^3.1.0
     version: 3.1.0
+  resolve.exports:
+    specifier: ^2.0.2
+    version: 2.0.2
   typescript:
     specifier: ^5.3.2
     version: 5.3.2
@@ -2741,6 +2744,11 @@ packages:
   /resolve-from@5.0.0:
     resolution: {integrity: sha512-qYg9KP24dD5qka9J47d0aVky0N+b4fTU89LN9iDnjB5waksiC49rvMB0PrUJQGoTmH50XPiqOvAjDfaijGxYZw==}
     engines: {node: '>=8'}
+    dev: true
+
+  /resolve.exports@2.0.2:
+    resolution: {integrity: sha512-X2UW6Nw3n/aMgDVy+0rSqgHlv39WZAlZrXCdnbyEiKm17DSqHX4MmQMaST3FbeWR5FTuRcUwYAziZajji0Y7mg==}
+    engines: {node: '>=10'}
     dev: true
 
   /resolve@1.22.8:

@@ -1,9 +1,9 @@
 #![deny(clippy::all)]
-
+use napi::{bindgen_prelude::Array, CallContext, JsObject, JsString, Result, Env, JsNumber};
+use napi_derive::{js_function, napi};
 use std::collections::HashSet;
 
-use napi::Result;
-use napi_derive::napi;
+
 #[napi]
 pub fn plus_100(input: u32) -> u32 {
   input + 100
@@ -27,6 +27,77 @@ pub enum Condition {
   Custom(String),
 }
 
+#[napi]
+fn to_js_obj(env: Env) -> napi::Result<JsObject> {
+  let mut arr = env.create_array(0)?;
+  arr.insert("a string")?;
+  arr.insert(42)?;
+  arr.coerce_to_object()
+}
+
+// #[napi]
+// pub fn loop_value(m: JsValue, keys: &HashSet<String>, result: &mut Option<HashSet<String>>) {
+  // let js_value = ctx.get::<JsValue>(0)?;
+  // let keys = ctx.get::<HashSet<String>>(1)?;
+  // let mut result = ctx.get::<Option<HashSet<String>>>(2)?.unwrap_or_default();
+  // let js_value = ctx.get(0)?;
+  // 对于 keys，我们假设它是一个 JavaScript 数组，并且每个元素都是一个字符串
+  // let js_array = ctx.get::<JsObject>(1)?;
+  // let mut keys = HashSet::new();
+  // let array_length = js_array.get_array_length()?;
+  // for i in 0..array_length {
+  //   let js_string = js_array.get_element::<JsString>(i)?;
+  //   let key = js_string.into_utf8()?.into_owned()?;
+  //   keys.insert(key);
+  // }
+
+  // // 对于 result，我们暂时忽略这个参数，因为它的处理方式取决于你的具体需求
+  // let mut result = HashSet::new();
+
+  // fn process_string(s: String, result: &mut HashSet<String>) -> String {
+  //   result.insert(s.clone());
+  //   s
+  // }
+
+  // match js_value {
+  //   JsValue::Object(obj) => {
+  //     let mut collected_strings = Vec::new();
+  //     for key in keys.iter() {
+  //       if obj.has_own_property(key)? {
+  //         if let Some(value) = obj.get_named_property::<JsValue>(key)? {
+  //           match value {
+  //             JsValue::String(s) => {
+  //               let s_str: String = s.into_utf8()?.into_owned()?;
+  //               collected_strings.push(process_string(s_str, &mut result));
+  //             }
+  //             _ => {}
+  //           }
+  //         }
+  //       }
+  //     }
+  //     Ok(Some(collected_strings))
+  //   }
+  //   JsValue::String(s) => {
+  //     let s_str: String = s.into_utf8()?.into_owned()?;
+  //     Ok(Some(vec![process_string(s_str, &mut result)]))
+  //   }
+  //   JsValue::Array(arr) => {
+  //     let arr: Array = arr.try_into()?;
+  //     let mut collected_strings = Vec::new();
+  //     for i in 0..arr.get_array_length()? {
+  //       let value = arr.get_element::<JsValue>(i)?;
+  //       if let JsValue::String(s) = value {
+  //         let s_str: String = s.into_utf8()?.into_owned()?;
+  //         collected_strings.push(process_string(s_str, &mut result));
+  //       }
+  //     }
+  //     Ok(Some(collected_strings))
+  //   }
+  //   JsValue::Null | JsValue::Undefined => Ok(None),
+  //   _ => Ok(None), // Handle other types if needed
+  // }
+// }
+
 // impl FromStr for Condition {
 //   type Err = String;
 
@@ -46,58 +117,28 @@ pub enum Condition {
 //   }
 // }
 
-use serde_json::Value;
 
 #[napi]
-pub fn loop_value(
-  m: Value,
-  keys: &HashSet<String>,
-  result: &mut Option<HashSet<String>>,
-) -> Option<Vec<String>> {
-  match m {
-    Value::String(s) => {
-      if let Some(result_set) = result {
-        result_set.insert(s.clone());
-      }
-      Some(vec![s])
-    }
-    Value::Array(values) => {
-      let arr_result = result.clone().unwrap_or_else(|| HashSet::new());
-      for item in values {
-        if let Some(item_result) = loop_value(item, keys, &mut Some(arr_result.clone())) {
-          return Some(item_result);
-        }
-      }
+// fn factorial(n: JsNumber) -> Result<JsNumber> {
+//   // 使用 get_value 将 JsNumber 转换为 f64，然后转为 u64
+//   let num: f64 = n.try_into()?;
+//   let result = factorial_recursive(num as u64);
+//   // 使用 create_uint64 将 u64 结果转换回 JsNumber
+//   n.env().create_uint64(result)
+// }
 
-      if result.is_none() && !arr_result.is_empty() {
-        return Some(arr_result.into_iter().collect());
-      } else {
-        None
-      }
-    }
-    Value::Object(map) => {
-      // TODO Temporarily define the order problem
-      let property_order: Vec<String> = vec![
-        String::from("browser"),
-        String::from("development"),
-        String::from("module"),
-        String::from("import"),
-        String::from("require"),
-        String::from("default"),
-      ];
+fn factorial(ctx: CallContext) -> Result<JsNumber> {
+  let n: JsNumber = ctx.get::<JsNumber>(0)?;
+  let num: f64 = n.try_into()?;
+  let result = factorial_recursive(num as u64);
+  // 使用 ctx.env.create_uint64 将 u64 结果转换回 JsNumber
+  ctx.env.create_uint64(result)
+}
 
-      for key in &property_order {
-        if let Some(value) = map.get(key) {
-          // if let Ok(condition) = Condition::from_str(&key) {
-          if keys.contains(key.as_str()) {
-            return loop_value(value.clone(), keys, result);
-          }
-          // }
-        }
-      }
-      None
+
+fn factorial_recursive(n: u64) -> u64 {
+    match n {
+        0 | 1 => 1,
+        _ => n * factorial_recursive(n - 1),
     }
-    Value::Null => None,
-    _ => None,
-  }
 }
